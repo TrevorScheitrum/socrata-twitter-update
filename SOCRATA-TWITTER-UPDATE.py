@@ -100,7 +100,7 @@ twitter = twython_tokens
 try:
     for post in final_list:
         if post['status']=='mod':
-            x="A dataset \""+post['title']+"\" has been updated: "+targeturl+"browse?q="+post['id']
+            x="A dataset \""+post['title']+"\" has been updated: "+targeturl+"d/"+post['id']
             y="A dataset \""+post['title']+"\" has been updated: "
             print len(y)+22
             #len is 32+title+22, 140-54 available for title (86)
