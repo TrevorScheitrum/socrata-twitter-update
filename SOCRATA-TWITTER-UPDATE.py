@@ -1,26 +1,27 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 #under development: limit tweet @ 140 chars for long SOCRATA titles
 
 
-# In[ ]:
+# In[1]:
 
 #import the required libraries
 import csv, requests, datetime, time
 import simplejson as json
 from twython import Twython
+from local_settings import twython_tokens
 
 
-# In[ ]:
+# In[2]:
 
 targeturl ='http://chhs.data.ca.gov/' #change this to the SOCRATA portal you want to target, don't forget ending /
 descriptor='CHHS OPEN DATA PORTAL'   #change this to a recognizable descriptor for yourself
 
 
-# In[ ]:
+# In[3]:
 
 r=requests.get(targeturl+"api/dcat.json") #build string according to SOCRATA's convention
 j=r.json() #parse the json into a dictionary named j, coincidentally j's KVPs are also dictionaries
@@ -35,7 +36,7 @@ j=r.json() #parse the json into a dictionary named j, coincidentally j's KVPs ar
 # 
 # ?$$app_token=INSERT-YOUR-APP-TOKEN-HERE
 
-# In[ ]:
+# In[4]:
 
 #if it fetched the data successfully, continue; otherwise stop
 #this could probably be implemented more pythonically.. but it works for now
@@ -46,17 +47,21 @@ else:
     sys.exit()
 
 
-# In[ ]:
+# In[5]:
 
 today=datetime.datetime.today()
+monday=today - datetime.timedelta(days=today.weekday())
+sunday=monday + datetime.timedelta(6)
 final_list=[]
 newdx={}
 ignorelist=['k9fb-stqc','rpkf-ugbp','i7wi-ei4m','emt8-tzcf']
-#enter the unique IDs you want to ignore
+#enter the unique IDs you want to ignore, this is essentially building a "blacklist" of datasets that
+#are updated EVERY SINGLE DAY, so people don't get bored reading the same tweets
 
 
-# In[ ]:
+# In[6]:
 
+#this prints out what the bot found so you can see it in human form before it's tweeted
 for i in j:
     if len(i['identifier']) == 9:
         created =datetime.datetime.strptime(i['created'] , '%Y-%m-%d')
@@ -64,17 +69,17 @@ for i in j:
 
         days_created =today-created
         days_modified=today-modified
-        
-        if days_modified.days<=1 and i['identifier'] not in ignorelist: #ignore catalog dataset
+        print "days modified: " + str(days_modified.days)
+        if days_modified.days > 6 and i['identifier'] not in ignorelist: #ignore catalog dataset
             #print "created",days_created.days,"days ago"
             #print "modified",days_modified.days,"days ago"
             #print i['title']
             #print "tags:",i['keyword'],"\n" #unicode, raw string
-            
+            print "appending to list"
             unified=i['keyword'].replace(';',',')
             strlist=unified.split(',')
             
-            print i['webService'],"\n",i['title'], "\ncreated on:",created,"\nmodified on:",modified
+            #print i['webService'],"\n",i['title'], "\ncreated on:",created,"\nupdated on:",modified
             
             if created==modified:
                 final_list.append({'id':i['identifier'],'title':i['title'],'tag':strlist,'status':'new'})
@@ -83,23 +88,20 @@ for i in j:
             #final_list is a list of dictionaries: the "stack" of info for tweets
 
 
-# In[ ]:
+# In[7]:
 
 #authenticate with your own twitter application tokens below
-
-twitter = Twython('YOUR_APP_KEY_HERE',
-                  'YOUR_APP_SECRET_HERE',
-                  'YOUR_OAUTH_TOKEN_HERE',
-                  'YOUR_OAUTH_TOKEN_SECRET_HERE')
+twitter = twython_tokens
 
 
-# In[ ]:
+# In[8]:
 
+#attempt to tweet, may fail if the name is too long, additional error catches may need to be developed here.
 try:
     for post in final_list:
         if post['status']=='mod':
-            x="A dataset \""+post['title']+"\" has been modified: "+targeturl+"browse?q="+post['id']
-            y="A dataset \""+post['title']+"\" has been modified: "
+            x="A dataset \""+post['title']+"\" has been updated: "+targeturl+"browse?q="+post['id']
+            y="A dataset \""+post['title']+"\" has been updated: "
             print len(y)+22
             #len is 32+title+22, 140-54 available for title (86)
             
@@ -112,7 +114,7 @@ try:
             #len is 37+title+22, 140-59 available for title (81)
             
             twitter.update_status(status=x)
-            time.sleep(20)
+            time.sleep(20) #wait 20 seconds between tweets
 except:
     pass
 
@@ -120,9 +122,10 @@ except:
 # In[ ]:
 
 #i follow people, run this line to follow and to support us!
-twitter.create_friendship(screen_name='chhsportalnews')
-twitter.create_friendship(screen_name='josephjlei')
-twitter.create_friendship(screen_name='kari_mah')
+#commented out, inactive at this time
+#twitter.create_friendship(screen_name='chhsportalnews')
+#twitter.create_friendship(screen_name='josephjlei')
+#twitter.create_friendship(screen_name='kari_mah')
 
 
 # In[ ]:
