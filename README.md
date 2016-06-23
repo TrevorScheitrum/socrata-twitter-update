@@ -12,3 +12,12 @@ We are working to develop a lightweight container for it via Flask and will be p
 ####Future features:
 * Tweet newly created data sets, even if they have not been recently modified
 * Tweet data sets with low view counts over time to build a user base
+* 
+####Usage of Code:
+This code expects a local_settings.py (locally) or prod_settings.py (on production server) file in the project directory with a variable called twython_tokens which contains your Twython api tokens, example:
+
+--local_settings.py---
+
+from twython import Twython
+
+twython_tokens = Twython('APP_KEY', 'APP_SECRET', 'OAUTH_TOKEN', 'OAUTH_TOKEN_SECRET')
